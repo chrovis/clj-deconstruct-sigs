@@ -1,0 +1,2 @@
+{:deps {ring/ring-jetty-adapter {:mvn/version "1.6.3"}
+        org.clojure/data.csv {:mvn/version "0.1.4"}}}
