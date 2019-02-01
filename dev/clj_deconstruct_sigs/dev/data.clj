@@ -1,4 +1,4 @@
-(ns clj-deconstruct-sigs.data
+(ns clj-deconstruct-sigs.dev.data
   (:require [clj-http.client :as http]
             [clojure.data.csv :as csv]
             [clojure.string :as string]
