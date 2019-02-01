@@ -10,9 +10,13 @@ jdk:
   - openjdk10
   - openjdk9
   - openjdk8
+before_script:
+  - lein version
 env:
+  matrix:
+    - VERSION='1.9'
+    - VERSION='1.10'
 before_install:
   - if [ -f "${JAVA_HOME}/lib/security/cacerts" -a -w  "${JAVA_HOME}/lib/security/cacerts" ]; then rm "${JAVA_HOME}/lib/security/cacerts" && ln -s /etc/ssl/certs/java/cacerts "${JAVA_HOME}/lib/security/cacerts"; fi;
 script:
-    - lein test
-branch: master
+  - lein with-profile dev,$VERSION test

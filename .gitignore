@@ -1,3 +1,12 @@
-/pom.xml
-target/
-/.lein-failures
+/target
+/classes
+/checkouts
+pom.xml
+pom.xml.asc
+*.jar
+*.class
+/.lein-*
+/.nrepl-port
+/node_modules
+*.log
+/docs

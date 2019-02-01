@@ -119,12 +119,13 @@
         used-indices (map first pruned)
         seed-idx (find-seed sample-tumor sigs)
         w (loop [w (m/set-column (m/zero-array [1 (count sigs)]) seed-idx 10)
-                 error-diff Double/POSITIVE_INFINITY]
+                 error-diff 1.0e10]
             (if (< 1e-3 error-diff)
               (let [error-pre ^double (get-error sample-tumor sigs w)
                     new-w (update-W-GR sample-tumor sigs w)
-                    error-post ^double (get-error sample-tumor sigs new-w)]
-                (recur new-w (/ (- error-pre error-post) error-pre)))
+                    error-post ^double (get-error sample-tumor sigs new-w)
+                    next-error-diff ^double (double (/ (- error-pre error-post) error-pre))]
+                (recur new-w next-error-diff))
               w))
         weights* (->> (map (fn [w orig-sig-idx] {orig-sig-idx w})
                            (m/emap #(if (< signature-cutoff %) % 0)
