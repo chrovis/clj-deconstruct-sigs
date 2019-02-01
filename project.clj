@@ -8,7 +8,7 @@
                    :slow :slow
                    :all (constantly true)}
   :profiles {:dev {:source-paths ["dev"]
-                   :resource-paths ["dev-resource"]
+                   :resource-paths ["dev-resources"]
                    :dependencies [[clj-http "3.9.1"]
                                   [org.clojure/data.csv "0.1.4"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
