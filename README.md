@@ -29,8 +29,7 @@ The main function is `clj-deconstruct-sigs.core/which-signatures`, which takes a
 
 Here is a repl session that adds more context.
 
-
-```
+```clojure
 (require '[clj-deconstruct-sigs.core :refer :all])
 
 ;; A 96 element vector representing the substitution patterns as per https://cancer.sanger.ac.uk/cosmic/signatures.
@@ -66,6 +65,6 @@ Help on tackling performance will be greatly appreciated!
 
 ## License
 
-Copyright © 2019 [Xcoo, Inc.](https://xcoo.jp/)
+Copyright 2019 [Xcoo, Inc.](https://xcoo.jp/)
 
 Licensed under the [Apache License, Version 2.0](LICENSE).
