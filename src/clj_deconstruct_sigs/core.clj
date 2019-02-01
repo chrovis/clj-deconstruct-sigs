@@ -119,7 +119,7 @@
         used-indices (map first pruned)
         seed-idx (find-seed sample-tumor sigs)
         w (loop [w (m/set-column (m/zero-array [1 (count sigs)]) seed-idx 10)
-                 error-diff 1.0e10]
+                 error-diff Double/POSITIVE_INFINITY]
             (if (< 1e-3 error-diff)
               (let [error-pre ^double (get-error sample-tumor sigs w)
                     new-w (update-W-GR sample-tumor sigs w)
