@@ -2,7 +2,8 @@
   (:require [clj-http.client :as http]
             [clojure.data.csv :as csv]
             [clojure.string :as string]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.core.matrix :as m]))
 
 (def cosmic-sigs-endpoint
   "https://cancer.sanger.ac.uk/cancergenome/assets/signatures_probabilities.txt")
@@ -39,4 +40,5 @@
     (io/make-parents "src/clj_deconstruct_sigs/data/generated.clj")
     (spit "src/clj_deconstruct_sigs/data/generated.clj"
           (str (list 'ns 'clj-deconstruct-sigs.data.generated) "\n\n"
-               (list 'def 'latest-cosmic-signatures (vec (map vec without-header)))))))
+               (list 'def (symbol "^:const") 'latest-cosmic-signatures (vec (map vec without-header))) "\n"
+               (list 'def (symbol "^:const") 'latest-cosmic-signatures-transposed (m/transpose (vec (map vec without-header))))))))

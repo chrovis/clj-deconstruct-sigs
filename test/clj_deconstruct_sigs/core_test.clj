@@ -5,7 +5,12 @@
             [clojure.java.io :as io]
             [clojure.test :refer :all]
             [clj-deconstruct-sigs.data.cosmic :as data-cosmic]
-            [clj-deconstruct-sigs.dev.data :as dev-data]))
+            [clj-deconstruct-sigs.dev.data :as dev-data]
+            [clj-deconstruct-sigs.data.generated :refer [latest-cosmic-signatures latest-cosmic-signatures-transposed]]))
+
+(deftest ensure-generated-data-exists
+  (is latest-cosmic-signatures)
+  (is latest-cosmic-signatures-transposed))
 
 (def test-cosmic-sigatures
   (-> (io/resource "test-cosmic-signature.csv")
