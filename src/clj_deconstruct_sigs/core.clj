@@ -121,10 +121,10 @@
         w (loop [w (m/set-column (m/zero-array [1 (count sigs)]) seed-idx 10)
                  error-diff Double/POSITIVE_INFINITY]
             (if (< 1e-3 error-diff)
-              (let [error-pre ^double (get-error sample-tumor sigs w)
+              (let [error-pre (double (get-error sample-tumor sigs w))
                     new-w (update-W-GR sample-tumor sigs w)
-                    error-post ^double (get-error sample-tumor sigs new-w)
-                    next-error-diff ^double (double (/ (- error-pre error-post) error-pre))]
+                    error-post (double (get-error sample-tumor sigs new-w))
+                    next-error-diff (double (/ (- error-pre error-post) error-pre))]
                 (recur new-w next-error-diff))
               w))
         weights* (->> (map (fn [w orig-sig-idx] {orig-sig-idx w})
