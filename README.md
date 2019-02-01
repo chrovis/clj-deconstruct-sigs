@@ -1,6 +1,9 @@
-![Mutational Signature](https://cancer.sanger.ac.uk/signatures/Signature-1.png "Mutational Signature")
+[![Clojars Project](https://img.shields.io/clojars/v/clj-deconstruct-sigs.svg)](https://clojars.org/clj-deconstruct-sigs)
+[![Build Status](https://travis-ci.org/chrovis/clj-deconstruct-sigs.svg?branch=prepare-publish)](https://travis-ci.org/chrovis/clj-deconstruct-sigs)
 
 # clj-deconstruct-sigs
+
+![Mutational Signature](https://cancer.sanger.ac.uk/signatures/Signature-1.png "Mutational Signature")
 
 clj-deconstruct-sigs is a Clojure port of [deconstructSigs](https://github.com/raerose01/deconstructSigs).
 
