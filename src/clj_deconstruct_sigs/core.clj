@@ -150,5 +150,5 @@
 (defn signature->vector [data]
   (let [counts (map #(get data % 0) trans-patterns)
         sum (apply + counts)]
-    (if (pos? sum)
+    (when (pos? sum)
       (map (comp double #(/ % sum)) counts))))
