@@ -147,7 +147,8 @@
      :diff diff
      :error-sum (Math/sqrt (m/esum (m/mul diff diff))) }))
 
-(defn signature-count->matrix [data]
+(defn signature->vector [data]
   (let [counts (map #(get data % 0) trans-patterns)
         sum (apply + counts)]
-    (map (comp double #(/ % sum)) counts)))
+    (when (pos? sum)
+      (map (comp double #(/ % sum)) counts))))
