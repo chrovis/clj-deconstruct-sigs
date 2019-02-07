@@ -1,6 +1,6 @@
 [![Clojars Project](https://img.shields.io/clojars/v/clj-deconstruct-sigs.svg)](https://clojars.org/clj-deconstruct-sigs)
 
-[![Build Status](https://travis-ci.org/chrovis/clj-deconstruct-sigs.svg?branch=prepare-publish)](https://travis-ci.org/chrovis/clj-deconstruct-sigs)
+[![Build Status](https://travis-ci.org/chrovis/clj-deconstruct-sigs.svg?branch=master)](https://travis-ci.org/chrovis/clj-deconstruct-sigs)
 
 # clj-deconstruct-sigs
 
