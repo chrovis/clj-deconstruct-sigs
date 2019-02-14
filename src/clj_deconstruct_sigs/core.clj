@@ -1,154 +1,145 @@
-(ns clj-deconstruct-sigs.core
-  (:require [clojure.core.matrix :as m]))
+(ns clj-deconstruct-sigs.core)
 
-(def acgt [\A \C \G \T])
+(set! *unchecked-math* :warn-on-boxed)
 
-(def ref-alt-patterns [{:ref \C :alt \A}
-                       {:ref \C :alt \G}
-                       {:ref \C :alt \T}
-                       {:ref \T :alt \A}
-                       {:ref \T :alt \C}
-                       {:ref \T :alt \G}])
+(defn- l1-normalize
+  "Returns a l1-normalized vector of `weights`."
+  ^doubles [^doubles weights]
+  (let [w-sum (double (areduce weights i ret 0.0 (+ ret (aget weights i))))]
+    (amap weights i ret (/ (aget weights i) w-sum))))
 
-(def trans-patterns (->> ref-alt-patterns
-                         (map (fn [p]
-                                (for [before acgt after acgt]
-                                  (assoc p :before before :after after))))
-                         flatten))
+(definline square [x] `(let [x# (double ~x)] (* x# x#)))
 
-(m/set-current-implementation :vectorz)
+(defn- sse
+  "Computes sum of squared errors: |Aw - x|^2."
+  ^double [^doubles x ^"[[D" A weights]
+  (let [w (l1-normalize weights)]
+    (areduce x j ret 0.0
+             (let [a ^doubles (aget A j)]
+               (+ ret (square (areduce w i e (- (aget x j))
+                                       (+ e (* (aget a i) (aget w i))))))))))
 
-(defn normalize [w]
-  (m/div w (m/esum w)))
+(defn- euclidean-distance
+  "Returns the euclidean distance between two vectors `x` and `y`."
+  ^double [^doubles x ^doubles y]
+  (Math/sqrt (areduce x i ret 0.0 (+ ret (square (- (aget x i) (aget y i)))))))
 
-(defn get-error [tumor signatures weights]
-  (let [product (m/mmul (normalize weights) signatures)]
-    (-> (m/sub tumor product)
-        (m/pow 2)
-        m/esum)))
+(defn- cut-off
+  "Returns a copy of `array` whose elements less than `cutoff` are set to zero."
+  ^doubles [^doubles array ^double cutoff]
+  (amap array i ret (let [v (aget array i)] (if (< cutoff v) v 0.0))))
 
-(defn find-min-idx [v]
-  (apply min-key second (map-indexed vector v)))
+(defn- find-seed-idx
+  "Returns an index of the signature nearest to `tumor`"
+  ^long [tumor signatures]
+  (->> signatures
+       (map-indexed vector)
+       (apply min-key (comp (partial euclidean-distance tumor) second))
+       first))
 
-(defn find-seed [tumor signatures]
-  (let [ ws (m/identity-matrix (m/row-count signatures))
-        errors (map (fn [w] (get-error tumor signatures w)) ws)
-        [min-err-idx] (find-min-idx errors)]
-    min-err-idx))
+(def ^:private ^:const golden-ratio (double (/ (dec (Math/sqrt 5.0)) 2.0)))
 
-(def golden-ratio (/ (dec (Math/sqrt 5)) 2))
-
-(defn gold-search-min [f ^double lower ^double upper]
+(defn- gold-search-min
+  "Finds a scalar value between `lower` and `upper` giving the local minimum of
+  the objective function `f` by golden section search."
+  ^double [f ^double lower ^double upper]
   (let [eps 1e-6
         c (- upper (* (- upper lower) golden-ratio))
         d (+ lower (* (- upper lower) golden-ratio))]
-    (loop [lower lower
-           upper upper
-           c c
-           d d]
-      (if (> (Math/abs (- upper lower))
-             eps)
-        (let [fc (f c) fd (f d)]
-          (if (< fc fd)
-            (recur lower
-                   d
-                   (- d (* golden-ratio (- d lower)))
-                   c)
-            (recur c
-                   upper
-                   d
-                   (+ c (* golden-ratio (- upper c))))))
-        (/ (+ lower upper) 2)))))
+    (loop [lower lower, upper upper, c c, d d]
+      (if (> (Math/abs (- upper lower)) eps)
+        (if (< (double (f c)) (double (f d)))
+          (recur lower d (- d (* golden-ratio (- d lower))) c)
+          (recur c upper d (+ c (* golden-ratio (- upper c)))))
+        (/ (+ lower upper) 2.0)))))
 
-(defn update-forward [tumor signatures w-orig v boo]
-  (loop [i 0
-         w w-orig
-         v v
-         boo boo]
-    (if (< i (m/row-count signatures))
-      (let [to-minimize (fn [x]
-                          (get-error tumor signatures
-                                     (m/add w-orig
-                                            (-> [1 (m/row-count signatures)]
-                                                m/zero-array
-                                                (m/set-column i x)))))
-            min-x (gold-search-min to-minimize
-                                   (- (first (m/get-column w-orig i)))
-                                   100)
-            v-new (m/set-indices v [[i i]] [min-x])
-            w-new (m/add w-orig (m/get-row v-new i))
-            get-err-res (get-error tumor signatures w-new)]
-        (recur (inc i)
-               w-new
-               v-new
-               (m/set-column boo i get-err-res)))
-      {:w w
-       :v v
-       :boo boo})))
+(defn- update-weights
+  "Updates one element of weights to minimize the error."
+  [tumor signatures ^doubles orig-w ^double orig-err]
+  (let [n-sigs (alength orig-w)]
+    (loop [i 0, min-err orig-err, min-w orig-w]
+      (if (< i n-sigs)
+        (let [w (aclone orig-w)
+              err! (fn ^double [^double x]
+                     (sse tumor signatures (doto w (aset-double i x))))
+              curr-x (gold-search-min err! 0.0 (+ 100.0 (aget orig-w i)))
+              curr-err (double (err! curr-x))]
+          (if (< curr-err min-err)
+            (recur (inc i) curr-err w)
+            (recur (inc i) min-err min-w)))
+        [min-w min-err]))))
 
-(defn update-W-GR [tumor signatures w-orig]
-  (let [err-old (get-error tumor signatures w-orig)
-        ;;TODO: rename boo to ith-error vector
-        boo (m/matrix [(repeat (m/row-count signatures) Double/POSITIVE_INFINITY)])
-        v-init (m/zero-matrix (m/row-count signatures) (m/row-count signatures))
-        {:as forward :keys [v boo]} (update-forward tumor signatures w-orig v-init boo)
-        [min-err-idx min-err] (find-min-idx (first boo))
-        w-new (m/add w-orig (m/get-row v min-err-idx))]
-    (if (< min-err err-old)
-      w-new
-      w-orig)))
+(defn- prune-signatures
+  "Prunes signatures that are unlikely to affect results."
+  [tumor signatures]
+  (->> signatures
+       (keep-indexed
+        (fn [sig-idx sig]
+          (when (->> (map vector tumor sig)
+                     (every? (fn [[^double t ^double s]]
+                               (or (<= 0.01 t) (<= s 0.2)))))
+            [sig-idx sig])))))
 
-(defn prune-signatures [tumor signatures]
-  (let [zero-corr-nucs (set (keep-indexed (fn [idx s] (when (< s 0.01) idx))
-                                          tumor))]
-    (keep-indexed (fn [sig-idx sig]
-                    (if (->>  sig
-                              (keep-indexed (fn [idx mut]
-                                              (when (and (> mut 0.2)
-                                                         (zero-corr-nucs idx))
-                                                idx)))
-                              seq)
-                      nil
-                      [sig-idx sig]))
-                  (m/matrix signatures))))
+(defn which-signatures
+  "Finds a linear mixture of `signature-set` which best describes the given
+  vector `sample-tumor`.
 
-(defn which-signatures [sample-tumor signature-set]
-  (let [pruned (prune-signatures sample-tumor signature-set)
-        signature-cutoff 0.06
-        sigs (map second pruned)
-        used-indices (map first pruned)
-        seed-idx (find-seed sample-tumor sigs)
-        w (loop [w (m/set-column (m/zero-array [1 (count sigs)]) seed-idx 10)
-                 error-diff Double/POSITIVE_INFINITY]
-            (if (< 1e-3 error-diff)
-              (let [error-pre (double (get-error sample-tumor sigs w))
-                    new-w (update-W-GR sample-tumor sigs w)
-                    error-post (double (get-error sample-tumor sigs new-w))
-                    next-error-diff (double (/ (- error-pre error-post) error-pre))]
-                (recur new-w next-error-diff))
-              w))
-        weights* (->> (map (fn [w orig-sig-idx] {orig-sig-idx w})
-                           (m/emap #(if (< signature-cutoff %) % 0)
-                                   (m/get-row (m/div w (m/esum w)) 0))
-                           used-indices)
+  Accepts the following options:
+  :signature-cutoff - A threshold for cutting weights off.
+                      Defaults to 0.06.
+  :error-threshold  - Target error reduction rate to stop optimization.
+                      Defaults to 1e-3.
+
+  Returns a map with the following keys:
+  :seed-idx  - Index of the signature that was used as the initial seed.
+  :weights   - A map of weight indices to weight. :weights* with zero
+               contribution entries.
+  :weights*  - A map of non-zero weight indices to weight.
+               Note that entries that have zero contribution will be missing.
+  :product   - matrix product of :weights and the provided signatures.
+  :unknown   - 1 minus the sum of weights.
+  :diff      - Element wise difference of the provided sample tumor and the
+               product.
+  :error-sum - Square root of the sum of the element wise square of :diff.
+               Indicates how close the :product is from the original input."
+  ([sample-tumor signature-set]
+   (which-signatures sample-tumor signature-set {}))
+  ([sample-tumor signature-set
+    {:keys [signature-cutoff ^double error-threshold]
+     :or {signature-cutoff 0.06, error-threshold 1e-3}}]
+   (let [[used-indices used-sigs] (->> signature-set
+                                       (prune-signatures sample-tumor)
+                                       (apply map vector))
+         t (double-array sample-tumor)
+         s (into-array (type t) (apply map (comp double-array vector) used-sigs))
+         seed-idx (find-seed-idx t (map double-array used-sigs))
+         w (loop [w' (doto (double-array (count used-sigs))
+                       (aset-double seed-idx 10.0))
+                  prev-err (sse t s w')]
+             (let [[new-w ^double new-err] (update-weights t s w' prev-err)]
+               (if (< error-threshold (/ (- prev-err new-err) prev-err))
+                 (recur new-w (double new-err))
+                 (cut-off (l1-normalize new-w) signature-cutoff))))
+         weights* (into {} (map vector used-indices w))
+         weights (->> (range (count signature-set))
+                      (map (fn [^long i] {(inc i) (get weights* i 0.0)}))
                       (into {}))
-        weights-matrix (->> (range (count signature-set))
-                            (map (fn [i] (get weights* i 0))))
-        weights-map (->> (range (count signature-set))
-                         (map (fn [i] {(inc i) (get weights* i 0)}))
-                         (into {}))
-        product (m/mmul weights-matrix signature-set)
-        diff (m/sub sample-tumor product)]
-    {:seed-idx seed-idx
-     :weights weights-map
-     :weights* weights*
-     :product product
-     :unknown (- 1 (m/esum weights-matrix))
-     :diff diff
-     :error-sum (Math/sqrt (m/esum (m/mul diff diff))) }))
+         product (apply mapv + (mapv #(mapv (partial * %1) %2) w used-sigs))
+         unknown (areduce ^doubles w i u 1.0 (- u (aget ^doubles w i)))
+         diff (mapv - sample-tumor product)
+         error-sum (Math/sqrt (reduce + 0.0 (mapv square diff)))]
+     {:seed-idx seed-idx, :weights weights, :weights* weights*,
+      :product product, :unknown unknown, :diff diff, :error-sum error-sum})))
 
-(defn signature->vector [data]
+(def ^:private ^:const trans-patterns
+  (for [[ref alts] [[\C "AGT"] [\T "ACG"]], alt alts, before "ACGT", after "ACGT"]
+    {:ref ref, :alt alt, :before before, :after after}))
+
+(defn signature->vector
+  "Converts a frequencies map into a 96 element vector representing the
+  substitution patterns."
+  [data]
   (let [counts (map #(get data % 0) trans-patterns)
-        sum (apply + counts)]
+        sum (double (apply + counts))]
     (when (pos? sum)
-      (map (comp double #(/ % sum)) counts))))
+      (mapv #(/ (double %) sum) counts))))
