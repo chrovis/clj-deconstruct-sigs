@@ -1,6 +1,6 @@
 (ns clj-deconstruct-sigs.core)
 
-(set! *unchecked-math* :warn-on-boxed)
+#?(:clj (set! *unchecked-math* :warn-on-boxed))
 
 (defn- l1-normalize
   "Returns a l1-normalized vector of `weights`."
@@ -8,7 +8,8 @@
   (let [w-sum (double (areduce weights i ret 0.0 (+ ret (aget weights i))))]
     (amap weights i ret (/ (aget weights i) w-sum))))
 
-(definline square [x] `(let [x# (double ~x)] (* x# x#)))
+#?(:clj (definline square [x] `(let [x# (double ~x)] (* x# x#)))
+   :cljs (defn- square ^double [^double x] (* x x)))
 
 (defn- sse
   "Computes sum of squared errors: |Aw - x|^2."
@@ -53,6 +54,8 @@
           (recur c upper d (+ c (* golden-ratio (- upper c)))))
         (/ (+ lower upper) 2.0)))))
 
+(def ^:private ^:const aset-double' #?(:clj aset-double :cljs aset))
+
 (defn- update-weights
   "Updates one element of weights to minimize the error."
   [tumor signatures ^doubles orig-w ^double orig-err]
@@ -61,7 +64,7 @@
       (if (< i n-sigs)
         (let [w (aclone orig-w)
               err! (fn ^double [^double x]
-                     (sse tumor signatures (doto w (aset-double i x))))
+                     (sse tumor signatures (doto w (aset-double' i x))))
               curr-x (gold-search-min err! 0.0 (+ 100.0 (aget orig-w i)))
               curr-err (double (err! curr-x))]
           (if (< curr-err min-err)
@@ -114,7 +117,7 @@
          s (into-array (type t) (apply map (comp double-array vector) used-sigs))
          seed-idx (find-seed-idx t (map double-array used-sigs))
          w (loop [w' (doto (double-array (count used-sigs))
-                       (aset-double seed-idx 10.0))
+                       (aset-double' seed-idx 10.0))
                   prev-err (sse t s w')]
              (let [[new-w ^double new-err] (update-weights t s w' prev-err)]
                (if (< error-threshold (/ (- prev-err new-err) prev-err))

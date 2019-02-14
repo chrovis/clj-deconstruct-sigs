@@ -12,6 +12,7 @@ jdk:
   - openjdk8
 before_script:
   - lein version
+  - nvm install 11
 env:
   matrix:
     - VERSION='1.9'
@@ -19,4 +20,5 @@ env:
 before_install:
   - if [ -f "${JAVA_HOME}/lib/security/cacerts" -a -w  "${JAVA_HOME}/lib/security/cacerts" ]; then rm "${JAVA_HOME}/lib/security/cacerts" && ln -s /etc/ssl/certs/java/cacerts "${JAVA_HOME}/lib/security/cacerts"; fi;
 script:
-  - lein with-profile dev,$VERSION test
+  - lein with-profile dev,$VERSION test :all
+  - lein with-profile dev,$VERSION doo node test once
