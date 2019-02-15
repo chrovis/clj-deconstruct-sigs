@@ -16,7 +16,7 @@
                                   [cider/piggieback "0.4.0"]
                                   [net.totakke/libra "0.1.1"]
                                   [criterium "0.4.4"]
-                                  [net.mikera/vectorz-clj "0.48.0"]]
+                                  [fipp "0.6.16"]]
                    :global-vars {*warn-on-reflection* true
                                  *unchecked-math* :warn-on-boxed}
                    :plugins [[lein-cljsbuild "1.1.7"]
