@@ -66,6 +66,38 @@
                             first
                             vec)
                        (range 100))
+         answers-exome (mapv #(-> (str "answer/answer-exome-" (inc ^long %) ".csv")
+                                  io/resource
+                                  slurp
+                                  csv/read-csv
+                                  drop-headers
+                                  first
+                                  vec)
+                             (range 100))
+         answers-genome (mapv #(-> (str "answer/answer-genome-" (inc ^long %) ".csv")
+                                   io/resource
+                                   slurp
+                                   csv/read-csv
+                                   drop-headers
+                                   first
+                                   vec)
+                              (range 100))
+         answers-exome2genome (mapv #(-> (str "answer/answer-exome2genome-" (inc ^long %) ".csv")
+                                         io/resource
+                                         slurp
+                                         csv/read-csv
+                                         drop-headers
+                                         first
+                                         vec)
+                                    (range 100))
+         answers-genome2exome (mapv #(-> (str "answer/answer-genome2exome-" (inc ^long %) ".csv")
+                                         io/resource
+                                         slurp
+                                         csv/read-csv
+                                         drop-headers
+                                         first
+                                         vec)
+                                    (range 100))
          f (-> ns'
                str
                (string/replace #"\-" "_")
@@ -79,7 +111,15 @@
          (newline)
          (fipp/pprint `(def ~'random-tumor-samples ~random-tumor-samples) opts)
          (newline)
-         (fipp/pprint `(def ~'answers ~answers) opts))))))
+         (fipp/pprint `(def ~'answers ~answers) opts)
+         (newline)
+         (fipp/pprint `(def ~'answers-exome ~answers-exome) opts)
+         (newline)
+         (fipp/pprint `(def ~'answers-genome ~answers-genome) opts)
+         (newline)
+         (fipp/pprint `(def ~'answers-exome2genome ~answers-exome2genome) opts)
+         (newline)
+         (fipp/pprint `(def ~'answers-genome2exome ~answers-genome2exome) opts))))))
 
 
 (comment

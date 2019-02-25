@@ -44,6 +44,43 @@
                     test-data/random-tumor-samples)]
     (is (< (reduce + (map measure-difference test-data/answers my-answers)) 1e-5))))
 
+(deftest ^:slow compare-reference-result-test-exome
+  (let [my-answers (#?(:clj pmap :cljs map)
+                    #(-> %
+                         (core/which-signatures test-data/test-cosmic-signatures)
+                         :weights
+                         to-vec)
+                    test-data/random-tumor-samples)]
+    (prn (map measure-difference test-data/answers-exome my-answers))
+    (is (< (reduce + (map measure-difference test-data/answers-exome my-answers)) 1e-5))))
+
+(deftest ^:slow compare-reference-result-test-genome
+  (let [my-answers (#?(:clj pmap :cljs map)
+                    #(-> %
+                         (core/which-signatures test-data/test-cosmic-signatures)
+                         :weights
+                         to-vec)
+                    test-data/random-tumor-samples)]
+    (is (< (reduce + (map measure-difference test-data/answers-genome my-answers)) 1e-5))))
+
+(deftest ^:slow compare-reference-result-test-exome2genome
+  (let [my-answers (#?(:clj pmap :cljs map)
+                    #(-> %
+                         (core/which-signatures test-data/test-cosmic-signatures)
+                         :weights
+                         to-vec)
+                    test-data/random-tumor-samples)]
+    (is (< (reduce + (map measure-difference test-data/answers-exome2genome my-answers)) 1e-5))))
+
+(deftest ^:slow compare-reference-result-test-genome2exome
+  (let [my-answers (#?(:clj pmap :cljs map)
+                    #(-> %
+                         (core/which-signatures test-data/test-cosmic-signatures)
+                         :weights
+                         to-vec)
+                    test-data/random-tumor-samples)]
+    (is (< (reduce + (map measure-difference test-data/answers-genome2exome my-answers)) 1e-5))))
+
 (deftest signature->vector-test
   (is (= (core/signature->vector {}) nil))
   (is (= (core/signature->vector {{:ref \C :alt \G :before \T :after \A} 3})
