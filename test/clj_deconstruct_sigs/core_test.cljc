@@ -51,7 +51,6 @@
                          :weights
                          to-vec)
                     test-data/random-tumor-samples)]
-    (prn (map measure-difference test-data/answers-exome my-answers))
     (is (< (reduce + (map measure-difference test-data/answers-exome my-answers)) 1e-5))))
 
 (deftest ^:slow compare-reference-result-test-genome
