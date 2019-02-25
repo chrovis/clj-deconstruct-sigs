@@ -125,6 +125,14 @@
                       Defaults to 0.06.
   :error-threshold  - Target error reduction rate to stop optimization.
                       Defaults to 1e-3.
+  :tri-count-method - One of #{:exome :genome :exome2genome :genome2exome}.
+                      Multiplies tumor elements by respective trinucleotide
+                      context distributions, primarily to account for the
+                      uneven distribution of trinucleotide contexts in
+                      e.g. exomes and genomes.
+  :tri-counts       - A map of trinucleotide symbols to their respective distribution.
+                      If specified, :tri-count-method is ignored.
+
 
   Returns a map with the following keys:
   :seed-idx  - Index of the signature that was used as the initial seed.
