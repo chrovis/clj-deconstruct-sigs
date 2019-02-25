@@ -1,4 +1,5 @@
-(ns clj-deconstruct-sigs.core)
+(ns clj-deconstruct-sigs.core
+  (:require [clj-deconstruct-sigs.data.tri-counts :refer [tri.counts.exome]]))
 
 #?(:clj (set! *unchecked-math* :warn-on-boxed))
 
@@ -83,6 +84,30 @@
                                (or (<= 0.01 t) (<= s 0.2)))))
             [sig-idx sig])))))
 
+(def ^:private ^:const trans-patterns
+  (for [[ref alts] [[\C "AGT"] [\T "ACG"]], alt alts, before "ACGT", after "ACGT"]
+    {:ref ref, :alt alt, :before before, :after after}))
+
+(defn normalize-data [tumor count-method]
+  (let [normalize-fn (fn [data]
+                       (let [foo (double-array tumor)
+                             wes (int-array (mapv
+                                             (fn [{:keys [ref alt before after]}]
+                                               (get data (keyword (str before ref after))))
+                                             trans-patterns))]
+                         (into []
+                               (l1-normalize (amap
+                                              foo
+                                              i
+                                              ret
+                                              (/ (aget foo i)
+                                                 (aget wes i)))))))]
+    (case count-method
+      :exome (normalize-fn clj-deconstruct-sigs.data.tri-counts/tri.counts.exome)
+      tumor ;;return tumor as-is by default
+      )))
+
+
 (defn which-signatures
   "Finds a linear mixture of `signature-set` which best describes the given
   vector `sample-tumor`.
@@ -110,10 +135,11 @@
   ([sample-tumor signature-set
     {:keys [signature-cutoff ^double error-threshold]
      :or {signature-cutoff 0.06, error-threshold 1e-3}}]
-   (let [[used-indices used-sigs] (->> signature-set
-                                       (prune-signatures sample-tumor)
+   (let [sample-tumor' (normalize-data sample-tumor :exome)
+         [used-indices used-sigs] (->> signature-set
+                                       (prune-signatures sample-tumor')
                                        (apply map vector))
-         t (double-array sample-tumor)
+         t (double-array sample-tumor')
          s (into-array (type t) (apply map (comp double-array vector) used-sigs))
          seed-idx (find-seed-idx t (map double-array used-sigs))
          w (loop [w' (doto (double-array (count used-sigs))
@@ -129,14 +155,10 @@
                       (into {}))
          product (apply mapv + (mapv #(mapv (partial * %1) %2) w used-sigs))
          unknown (areduce ^doubles w i u 1.0 (- u (aget ^doubles w i)))
-         diff (mapv - sample-tumor product)
+         diff (mapv - sample-tumor' product)
          error-sum (Math/sqrt (reduce + 0.0 (mapv square diff)))]
      {:seed-idx seed-idx, :weights weights, :weights* weights*,
       :product product, :unknown unknown, :diff diff, :error-sum error-sum})))
-
-(def ^:private ^:const trans-patterns
-  (for [[ref alts] [[\C "AGT"] [\T "ACG"]], alt alts, before "ACGT", after "ACGT"]
-    {:ref ref, :alt alt, :before before, :after after}))
 
 (defn signature->vector
   "Converts a frequencies map into a 96 element vector representing the

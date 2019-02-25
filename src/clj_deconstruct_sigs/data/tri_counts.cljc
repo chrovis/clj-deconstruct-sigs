@@ -34,7 +34,7 @@
    :TTG 1593181
    :TTT 2286246})
 
-(def tri.counts.exome
+(def tri.counts.genome
   {:ACA 115415924
    :ACC  66550070
    :ACG  14381094
