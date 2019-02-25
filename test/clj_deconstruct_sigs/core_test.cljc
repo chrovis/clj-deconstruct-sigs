@@ -3,7 +3,8 @@
                :cljs [cljs.test :refer-macros [deftest is testing]])
             [clj-deconstruct-sigs.core :as core]
             [clj-deconstruct-sigs.data.cosmic :as data-cosmic]
-            [clj-deconstruct-sigs.data.cosmic-test :as test-data]))
+            [clj-deconstruct-sigs.data.cosmic-test :as test-data]
+            [clj-deconstruct-sigs.data.tri-counts :as tri-counts]))
 
 (def ^:const ^:private which-signatures-keyset
   #{:seed-idx :weights :weights* :product :unknown :diff :error-sum})
@@ -34,6 +35,14 @@
     (is (< (measure-difference answer-weights (to-vec (:weights result))) 1e-15))
     (is (= 25 (:seed-idx result)))
     (is (< (:error-sum result) 0.02369))))
+
+(deftest explicit-tri-count-opt-test
+  (let [answer-weights (first test-data/answers-exome2genome)
+        result (-> test-data/random-tumor-samples
+                   first
+                   (core/which-signatures test-data/test-cosmic-signatures
+                                          {:tri-counts tri-counts/exome2genome}))]
+    (is (< (measure-difference answer-weights (to-vec (:weights result))) 1e-15))))
 
 (deftest ^:slow compare-reference-result-test
   (let [my-answers (#?(:clj pmap :cljs map)

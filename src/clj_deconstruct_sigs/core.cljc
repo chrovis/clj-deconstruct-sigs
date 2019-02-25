@@ -88,7 +88,7 @@
   (for [[ref alts] [[\C "AGT"] [\T "ACG"]], alt alts, before "ACGT", after "ACGT"]
     {:ref ref, :alt alt, :before before, :after after}))
 
-(defn normalize-data [tumor count-method]
+(defn normalize-data [tumor {:keys [count-method tri-counts]}]
   (let [normalize-fn (fn [data]
                        (let [foo (double-array tumor)
                              wes (double-array (mapv
@@ -106,12 +106,13 @@
                                               ret
                                               (* (aget foo i)
                                                  (aget wes i)))))))]
-    (case count-method
-      :exome (normalize-fn tri-counts/exome)
-      :genome (normalize-fn tri-counts/genome)
-      :exome2genome (normalize-fn tri-counts/exome2genome)
-      :genome2exome (normalize-fn tri-counts/genome2exome)
-      tumor ;;return tumor as-is by default
+    (cond
+      (= count-method :exome) (normalize-fn tri-counts/exome)
+      (= count-method :genome) (normalize-fn tri-counts/genome)
+      (= count-method :exome2genome) (normalize-fn tri-counts/exome2genome)
+      (= count-method :genome2exome) (normalize-fn tri-counts/genome2exome)
+      (and (nil? count-method) tri-counts) (normalize-fn tri-counts)
+      :default tumor ;;return tumor as-is by default
       )))
 
 
@@ -140,9 +141,11 @@
   ([sample-tumor signature-set]
    (which-signatures sample-tumor signature-set {}))
   ([sample-tumor signature-set
-    {:keys [signature-cutoff ^double error-threshold tri-count-method]
+    {:keys [signature-cutoff ^double error-threshold tri-count-method tri-counts]
      :or {signature-cutoff 0.06, error-threshold 1e-3}}]
-   (let [sample-tumor' (normalize-data sample-tumor tri-count-method)
+   (let [sample-tumor' (normalize-data sample-tumor
+                                       {:count-method tri-count-method
+                                        :tri-counts tri-counts})
          [used-indices used-sigs] (->> signature-set
                                        (prune-signatures sample-tumor')
                                        (apply map vector))

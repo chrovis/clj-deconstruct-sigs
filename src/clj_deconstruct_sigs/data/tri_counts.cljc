@@ -1,5 +1,8 @@
 (ns clj-deconstruct-sigs.data.tri-counts)
 
+;; Hardcoded exome and genome trinucleotide context counts based on hg19,
+;; bundled together with the original deconstructSigs
+
 (def exome
   {:ACA 1749730
    :ACC 1508395
