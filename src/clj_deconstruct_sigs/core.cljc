@@ -91,20 +91,26 @@
 (defn normalize-data [tumor count-method]
   (let [normalize-fn (fn [data]
                        (let [foo (double-array tumor)
-                             wes (int-array (mapv
-                                             (fn [{:keys [ref alt before after]}]
-                                               (get data (keyword (str before ref after))))
-                                             trans-patterns))]
+                             wes (double-array (mapv
+                                                (fn [{:keys [ref alt before after]}]
+                                                  (let [^double v (get data (keyword (str before ref after)))]
+                                                    (if (or (= count-method :exome)
+                                                            (= count-method :genome))
+                                                      (/ 1 v)
+                                                      v)))
+                                                trans-patterns))]
                          (into []
                                (l1-normalize (amap
                                               foo
                                               i
                                               ret
-                                              (/ (aget foo i)
+                                              (* (aget foo i)
                                                  (aget wes i)))))))]
     (case count-method
       :exome (normalize-fn tri-counts/exome)
       :genome (normalize-fn tri-counts/genome)
+      :exome2genome (normalize-fn tri-counts/exome2genome)
+      :genome2exome (normalize-fn tri-counts/genome2exome)
       tumor ;;return tumor as-is by default
       )))
 

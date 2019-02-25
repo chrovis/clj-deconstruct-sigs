@@ -67,3 +67,9 @@
    :TTC 112827451
    :TTG 108406418
    :TTT 219915599})
+
+(def exome2genome
+  (merge-with (comp double /) genome exome))
+
+(def genome2exome
+  (merge-with (comp double /) exome genome))
