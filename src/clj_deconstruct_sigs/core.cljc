@@ -1,5 +1,5 @@
 (ns clj-deconstruct-sigs.core
-  (:require [clj-deconstruct-sigs.data.tri-counts :refer [tri.counts.exome]]))
+  (:require [clj-deconstruct-sigs.data.tri-counts :as tri-counts :refer [exome genome]]))
 
 #?(:clj (set! *unchecked-math* :warn-on-boxed))
 
@@ -103,7 +103,8 @@
                                               (/ (aget foo i)
                                                  (aget wes i)))))))]
     (case count-method
-      :exome (normalize-fn clj-deconstruct-sigs.data.tri-counts/tri.counts.exome)
+      :exome (normalize-fn tri-counts/exome)
+      :genome (normalize-fn tri-counts/genome)
       tumor ;;return tumor as-is by default
       )))
 
@@ -133,9 +134,9 @@
   ([sample-tumor signature-set]
    (which-signatures sample-tumor signature-set {}))
   ([sample-tumor signature-set
-    {:keys [signature-cutoff ^double error-threshold]
+    {:keys [signature-cutoff ^double error-threshold tri-count-method]
      :or {signature-cutoff 0.06, error-threshold 1e-3}}]
-   (let [sample-tumor' (normalize-data sample-tumor :exome)
+   (let [sample-tumor' (normalize-data sample-tumor tri-count-method)
          [used-indices used-sigs] (->> signature-set
                                        (prune-signatures sample-tumor')
                                        (apply map vector))

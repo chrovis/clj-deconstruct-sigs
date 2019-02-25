@@ -47,7 +47,7 @@
 (deftest ^:slow compare-reference-result-test-exome
   (let [my-answers (#?(:clj pmap :cljs map)
                     #(-> %
-                         (core/which-signatures test-data/test-cosmic-signatures)
+                         (core/which-signatures test-data/test-cosmic-signatures {:tri-count-method :exome})
                          :weights
                          to-vec)
                     test-data/random-tumor-samples)]
@@ -57,7 +57,8 @@
 (deftest ^:slow compare-reference-result-test-genome
   (let [my-answers (#?(:clj pmap :cljs map)
                     #(-> %
-                         (core/which-signatures test-data/test-cosmic-signatures)
+                         (core/which-signatures test-data/test-cosmic-signatures
+                                                {:tri-count-method :genome})
                          :weights
                          to-vec)
                     test-data/random-tumor-samples)]

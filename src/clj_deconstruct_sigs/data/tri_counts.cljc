@@ -1,6 +1,6 @@
 (ns clj-deconstruct-sigs.data.tri-counts)
 
-(def tri.counts.exome
+(def exome
   {:ACA 1749730
    :ACC 1508395
    :ACG  547913
@@ -34,7 +34,7 @@
    :TTG 1593181
    :TTT 2286246})
 
-(def tri.counts.genome
+(def genome
   {:ACA 115415924
    :ACC  66550070
    :ACG  14381094
