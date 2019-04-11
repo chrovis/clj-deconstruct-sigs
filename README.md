@@ -52,12 +52,6 @@ Here is a repl session that adds more context.
  :error-sum 0.023682681269721964}
 ```
 
-## Performance and implementation
-
-Current implementation uses [clj-vectorz](https://github.com/mikera/vectorz-clj).
-While faster than `core.matrix` itself, it is dramatically slower than the original R implementation.
-Help on tackling performance will be greatly appreciated!
-
 ## License
 
 Copyright 2019 [Xcoo, Inc.](https://xcoo.jp/)
