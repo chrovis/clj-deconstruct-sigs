@@ -1,4 +1,4 @@
-(defproject clj-deconstruct-sigs "0.2.0"
+(defproject clj-deconstruct-sigs "0.3.0"
   :description "deconstructSigs for Clojure"
   :url "https://github.com/chrovis/clj-deconstruct-sigs"
   :license {:name "Apache License, Version 2.0"
