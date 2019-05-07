@@ -88,24 +88,24 @@
   (for [[ref alts] [[\C "AGT"] [\T "ACG"]], alt alts, before "ACGT", after "ACGT"]
     {:ref ref, :alt alt, :before before, :after after}))
 
-(defn normalize-data [tumor {:keys [count-method tri-counts]}]
+(defn normalize-tri-counts [tumor {:keys [count-method tri-counts]}]
   (let [normalize-fn (fn [data]
-                       (let [foo (double-array tumor)
-                             wes (double-array (mapv
-                                                (fn [{:keys [ref alt before after]}]
-                                                  (let [^double v (get data (keyword (str before ref after)))]
-                                                    (if (or (= count-method :exome)
-                                                            (= count-method :genome))
-                                                      (/ 1 v)
-                                                      v)))
-                                                trans-patterns))]
+                       (let [tumor-array (double-array tumor)
+                             weights (double-array (mapv
+                                                    (fn [{:keys [ref alt before after]}]
+                                                      (let [^double v (get data (keyword (str before ref after)))]
+                                                        (if (or (= count-method :exome)
+                                                                (= count-method :genome))
+                                                          (/ 1 v)
+                                                          v)))
+                                                    trans-patterns))]
                          (into []
                                (l1-normalize (amap
-                                              foo
+                                              tumor-array
                                               i
                                               ret
-                                              (* (aget foo i)
-                                                 (aget wes i)))))))]
+                                              (* (aget tumor-array i)
+                                                 (aget weights i)))))))]
     (cond
       (= count-method :exome) (normalize-fn tri-counts/exome)
       (= count-method :genome) (normalize-fn tri-counts/genome)
@@ -151,9 +151,9 @@
   ([sample-tumor signature-set
     {:keys [signature-cutoff ^double error-threshold tri-count-method tri-counts]
      :or {signature-cutoff 0.06, error-threshold 1e-3}}]
-   (let [sample-tumor' (normalize-data sample-tumor
-                                       {:count-method tri-count-method
-                                        :tri-counts tri-counts})
+   (let [sample-tumor' (normalize-tri-counts sample-tumor
+                                             {:count-method tri-count-method
+                                              :tri-counts tri-counts})
          [used-indices used-sigs] (->> signature-set
                                        (prune-signatures sample-tumor')
                                        (apply map vector))

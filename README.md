@@ -52,10 +52,6 @@ Here is a repl session that adds more context.
  :error-sum 0.023682681269721964}
 ```
 
-### Test data maintenance
-
-Assuming deconstructSigs is installed, run `Rscript R-reference/R_answers.R `.
-
 ## License
 
 Copyright 2019 [Xcoo, Inc.](https://xcoo.jp/)
