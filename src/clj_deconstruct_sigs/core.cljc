@@ -1,4 +1,5 @@
-(ns clj-deconstruct-sigs.core)
+(ns clj-deconstruct-sigs.core
+  (:require [clj-deconstruct-sigs.data.tri-counts :as tri-counts :refer [exome genome]]))
 
 #?(:clj (set! *unchecked-math* :warn-on-boxed))
 
@@ -83,6 +84,38 @@
                                (or (<= 0.01 t) (<= s 0.2)))))
             [sig-idx sig])))))
 
+(def ^:private ^:const trans-patterns
+  (for [[ref alts] [[\C "AGT"] [\T "ACG"]], alt alts, before "ACGT", after "ACGT"]
+    {:ref ref, :alt alt, :before before, :after after}))
+
+(defn normalize-tri-counts [tumor {:keys [count-method tri-counts]}]
+  (let [normalize-fn (fn [data]
+                       (let [tumor-array (double-array tumor)
+                             weights (double-array (mapv
+                                                    (fn [{:keys [ref alt before after]}]
+                                                      (let [^double v (get data (keyword (str before ref after)))]
+                                                        (if (or (= count-method :exome)
+                                                                (= count-method :genome))
+                                                          (/ 1 v)
+                                                          v)))
+                                                    trans-patterns))]
+                         (into []
+                               (l1-normalize (amap
+                                              tumor-array
+                                              i
+                                              ret
+                                              (* (aget tumor-array i)
+                                                 (aget weights i)))))))]
+    (cond
+      (= count-method :exome) (normalize-fn tri-counts/exome)
+      (= count-method :genome) (normalize-fn tri-counts/genome)
+      (= count-method :exome2genome) (normalize-fn tri-counts/exome2genome)
+      (= count-method :genome2exome) (normalize-fn tri-counts/genome2exome)
+      (and (nil? count-method) tri-counts) (normalize-fn tri-counts)
+      :default tumor ;;return tumor as-is by default
+      )))
+
+
 (defn which-signatures
   "Finds a linear mixture of `signature-set` which best describes the given
   vector `sample-tumor`.
@@ -92,6 +125,14 @@
                       Defaults to 0.06.
   :error-threshold  - Target error reduction rate to stop optimization.
                       Defaults to 1e-3.
+  :tri-count-method - One of #{:exome :genome :exome2genome :genome2exome}.
+                      Multiplies tumor elements by respective trinucleotide
+                      context distributions, primarily to account for the
+                      uneven distribution of trinucleotide contexts in
+                      e.g. exomes and genomes.
+  :tri-counts       - A map of trinucleotide symbols to their respective distribution.
+                      If specified, :tri-count-method is ignored.
+
 
   Returns a map with the following keys:
   :seed-idx  - Index of the signature that was used as the initial seed.
@@ -108,12 +149,15 @@
   ([sample-tumor signature-set]
    (which-signatures sample-tumor signature-set {}))
   ([sample-tumor signature-set
-    {:keys [signature-cutoff ^double error-threshold]
+    {:keys [signature-cutoff ^double error-threshold tri-count-method tri-counts]
      :or {signature-cutoff 0.06, error-threshold 1e-3}}]
-   (let [[used-indices used-sigs] (->> signature-set
-                                       (prune-signatures sample-tumor)
+   (let [sample-tumor' (normalize-tri-counts sample-tumor
+                                             {:count-method tri-count-method
+                                              :tri-counts tri-counts})
+         [used-indices used-sigs] (->> signature-set
+                                       (prune-signatures sample-tumor')
                                        (apply map vector))
-         t (double-array sample-tumor)
+         t (double-array sample-tumor')
          s (into-array (type t) (apply map (comp double-array vector) used-sigs))
          seed-idx (find-seed-idx t (map double-array used-sigs))
          w (loop [w' (doto (double-array (count used-sigs))
@@ -129,14 +173,10 @@
                       (into {}))
          product (apply mapv + (mapv #(mapv (partial * %1) %2) w used-sigs))
          unknown (areduce ^doubles w i u 1.0 (- u (aget ^doubles w i)))
-         diff (mapv - sample-tumor product)
+         diff (mapv - sample-tumor' product)
          error-sum (Math/sqrt (reduce + 0.0 (mapv square diff)))]
      {:seed-idx seed-idx, :weights weights, :weights* weights*,
       :product product, :unknown unknown, :diff diff, :error-sum error-sum})))
-
-(def ^:private ^:const trans-patterns
-  (for [[ref alts] [[\C "AGT"] [\T "ACG"]], alt alts, before "ACGT", after "ACGT"]
-    {:ref ref, :alt alt, :before before, :after after}))
 
 (defn signature->vector
   "Converts a frequencies map into a 96 element vector representing the
