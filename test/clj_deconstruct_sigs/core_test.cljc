@@ -2,23 +2,17 @@
   (:require #?(:clj [clojure.test :refer :all]
                :cljs [cljs.test :refer-macros [deftest is testing]])
             [clj-deconstruct-sigs.core :as core]
-            [clj-deconstruct-sigs.data.cosmic :as data-cosmic]
             [clj-deconstruct-sigs.data.cosmic-test :as test-data]
             [clj-deconstruct-sigs.data.tri-counts :as tri-counts]))
 
 (def ^:const ^:private which-signatures-keyset
-  #{:seed-idx :weights :weights* :product :unknown :diff :error-sum})
+  #{:seed-idx :weights :weights-with-names :product :unknown :diff :error-sum})
 
 (deftest basic-which-signatures-test
   (let [result (core/which-signatures
                 (first test-data/random-tumor-samples)
-                test-data/test-cosmic-signatures)]
-    (is (= which-signatures-keyset (set (keys result))))))
-
-(deftest cosmic-signatures-test
-  (let [result (core/which-signatures
-                (first test-data/random-tumor-samples)
-                data-cosmic/cosmic-signatures)]
+                {:signature-names test-data/test-cosmic-signature-names
+                 :signatures test-data/test-cosmic-signatures})]
     (is (= which-signatures-keyset (set (keys result))))))
 
 (defn- to-vec [m]
@@ -31,7 +25,8 @@
   (let [answer-weights (first test-data/answers)
         result (-> test-data/random-tumor-samples
                    first
-                   (core/which-signatures test-data/test-cosmic-signatures))]
+                   (core/which-signatures {:signature-names test-data/test-cosmic-signature-names
+                                           :signatures test-data/test-cosmic-signatures}))]
     (is (< (measure-difference answer-weights (to-vec (:weights result))) 1e-15))
     (is (= 25 (:seed-idx result)))
     (is (< (:error-sum result) 0.02369))))
@@ -40,14 +35,16 @@
   (let [answer-weights (first test-data/answers-exome2genome)
         result (-> test-data/random-tumor-samples
                    first
-                   (core/which-signatures test-data/test-cosmic-signatures
+                   (core/which-signatures {:signature-names test-data/test-cosmic-signature-names
+                                           :signatures test-data/test-cosmic-signatures}
                                           {:tri-counts tri-counts/exome2genome}))]
     (is (< (measure-difference answer-weights (to-vec (:weights result))) 1e-15))))
 
 (deftest ^:slow compare-reference-result-test
   (let [my-answers (#?(:clj pmap :cljs map)
                     #(-> %
-                         (core/which-signatures test-data/test-cosmic-signatures)
+                         (core/which-signatures {:signature-names test-data/test-cosmic-signature-names
+                                                 :signatures test-data/test-cosmic-signatures})
                          :weights
                          to-vec)
                     test-data/random-tumor-samples)]
@@ -56,7 +53,9 @@
 (deftest ^:slow compare-reference-result-test-exome
   (let [my-answers (#?(:clj pmap :cljs map)
                     #(-> %
-                         (core/which-signatures test-data/test-cosmic-signatures {:tri-count-method :exome})
+                         (core/which-signatures {:signature-names test-data/test-cosmic-signature-names
+                                                 :signatures test-data/test-cosmic-signatures}
+                                                {:tri-count-method :exome})
                          :weights
                          to-vec)
                     test-data/random-tumor-samples)]
@@ -65,7 +64,8 @@
 (deftest ^:slow compare-reference-result-test-genome
   (let [my-answers (#?(:clj pmap :cljs map)
                     #(-> %
-                         (core/which-signatures test-data/test-cosmic-signatures
+                         (core/which-signatures {:signature-names test-data/test-cosmic-signature-names
+                                                 :signatures test-data/test-cosmic-signatures}
                                                 {:tri-count-method :genome})
                          :weights
                          to-vec)
@@ -75,7 +75,8 @@
 (deftest ^:slow compare-reference-result-test-exome2genome
   (let [my-answers (#?(:clj pmap :cljs map)
                     #(-> %
-                         (core/which-signatures test-data/test-cosmic-signatures
+                         (core/which-signatures {:signature-names test-data/test-cosmic-signature-names
+                                                 :signatures test-data/test-cosmic-signatures}
                                                 {:tri-count-method :exome2genome})
                          :weights
                          to-vec)
@@ -85,7 +86,8 @@
 (deftest ^:slow compare-reference-result-test-genome2exome
   (let [my-answers (#?(:clj pmap :cljs map)
                     #(-> %
-                         (core/which-signatures test-data/test-cosmic-signatures
+                         (core/which-signatures {:signature-names test-data/test-cosmic-signature-names
+                                                 :signatures test-data/test-cosmic-signatures}
                                                 {:tri-count-method :genome2exome})
                          :weights
                          to-vec)

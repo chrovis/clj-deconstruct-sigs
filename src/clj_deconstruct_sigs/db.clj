@@ -21,15 +21,15 @@
 (defn load-signature-database
   [f]
   (with-open [rdr (io/reader f)]
-    (let [emap (->> (line-seq rdr)
-                    (map #(string/split % #"\t"))
+    (let [rows (csv/read-csv rdr :separator \tab)
+          emap (->> rows
                     (drop 1)
                     (map (fn [row]
                            [(first row) (rest row)]))
                     (into {}))]
-      (->> trans-pattern-names
-           (map emap)
-           (apply map vector)
-           (mapv (fn [xs]
-                   (mapv #(Double/parseDouble %) xs)))
-           doall))))
+      {:signature-names (rest (first rows))
+       :signatures (->> trans-pattern-names
+                        (map emap)          ; sort values by trans-pattern-names
+                        (apply map vector)  ; transpose
+                        (mapv #(mapv Double/parseDouble %))
+                        doall)})))

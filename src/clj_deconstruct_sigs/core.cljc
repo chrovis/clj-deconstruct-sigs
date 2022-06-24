@@ -146,15 +146,16 @@
                product.
   :error-sum - Square root of the sum of the element wise square of :diff.
                Indicates how close the :product is from the original input."
-  ([sample-tumor signature-set]
-   (which-signatures sample-tumor signature-set {}))
-  ([sample-tumor signature-set
+  ([sample-tumor {:keys [signatures signature-names] :as signature-data}]
+   (which-signatures sample-tumor signature-data {}))
+  ([sample-tumor {:keys [signatures signature-names]}
     {:keys [signature-cutoff ^double error-threshold tri-count-method tri-counts]
      :or {signature-cutoff 0.06, error-threshold 1e-3}}]
-   (let [sample-tumor' (normalize-tri-counts sample-tumor
+   (let [signature-names' (vec signature-names)
+         sample-tumor' (normalize-tri-counts sample-tumor
                                              {:count-method tri-count-method
                                               :tri-counts tri-counts})
-         [used-indices used-sigs] (->> signature-set
+         [used-indices used-sigs] (->> signatures
                                        (prune-signatures sample-tumor')
                                        (apply map vector))
          t (double-array sample-tumor')
@@ -168,14 +169,15 @@
                  (recur new-w (double new-err))
                  (cut-off (l1-normalize new-w) signature-cutoff))))
          weights* (into {} (map vector used-indices w))
-         weights (->> (range (count signature-set))
-                      (map (fn [^long i] {(inc i) (get weights* i 0.0)}))
+         weights (->> (range (count signatures))
+                      (map (fn [^long i] {i (get weights* i 0.0)}))
                       (into {}))
+         weights-with-names (into {} (map (fn [[i v]] {(nth signature-names' i) v}) weights))
          product (apply mapv + (mapv #(mapv (partial * %1) %2) w used-sigs))
          unknown (areduce ^doubles w i u 1.0 (- u (aget ^doubles w i)))
          diff (mapv - sample-tumor' product)
          error-sum (Math/sqrt (reduce + 0.0 (mapv square diff)))]
-     {:seed-idx seed-idx, :weights weights, :weights* weights*,
+     {:seed-idx seed-idx, :weights weights, :weights-with-names weights-with-names,
       :product product, :unknown unknown, :diff diff, :error-sum error-sum})))
 
 (defn signature->vector
