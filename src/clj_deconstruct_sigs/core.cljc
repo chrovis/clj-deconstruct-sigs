@@ -114,8 +114,6 @@
       (and (nil? count-method) tri-counts) (normalize-fn tri-counts)
       :default tumor ;;return tumor as-is by default
       )))
-
-
 (defn which-signatures
   "Finds a linear mixture of `signature-set` which best describes the given
   vector `sample-tumor`.

@@ -20,8 +20,9 @@
                    :global-vars {*warn-on-reflection* true
                                  *unchecked-math* :warn-on-boxed}
                    :plugins [[lein-cljsbuild "1.1.7"]
-                             [lein-doo "0.1.10"]
-                             [net.totakke/lein-libra "0.1.2"]]
+                             [lein-doo "0.1.11"]
+                             [net.totakke/lein-libra "0.1.2"]
+                             [lein-cljfmt "0.8.0"]]
                    :libra {:bench-paths ["bench"]}
                    :cljsbuild {:builds
                                {:test
@@ -32,8 +33,10 @@
                                             :optimizations :simple
                                             :target :nodejs}}}}
                    :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}}
-             :1.9 {:dependencies [[org.clojure/clojure "1.11.1"]
-                                  [org.clojure/clojurescript "1.11.60"]
+             :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]
+                                  [org.clojure/clojurescript "1.9.946"]
                                   [javax.xml.bind/jaxb-api "2.4.0-b180830.0359"]]}
-             :1.10 {:dependencies [[org.clojure/clojure "1.11.1"]
+             :1.10 {:dependencies [[org.clojure/clojure "1.10.3"]
+                                   [org.clojure/clojurescript "1.10.914"]]}
+             :1.11 {:dependencies [[org.clojure/clojure "1.11.1"]
                                    [org.clojure/clojurescript "1.11.60"]]}})

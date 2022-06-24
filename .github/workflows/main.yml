@@ -1,0 +1,37 @@
+name: main
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '8', '11', '16', '17']
+        clojure: [ '1.9', '1.10', '1.11' ]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        java-version: ${{ matrix.java }}
+        distribution: 'adopt'
+        architecture: x64
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: latest
+    - name: Cache m2 repository
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/project.clj') }}
+        restore-keys: |
+          ${{ runner.os }}-m2-
+    - name: Install dependencies
+      run: |
+        lein deps
+    - name: Run tests
+      run: |
+        lein with-profile +dev:+${{ matrix.clojure }} test
+        lein with-profile +dev,+${{ matrix.clojure }} doo node test once
