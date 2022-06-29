@@ -9,19 +9,20 @@
                    :all (constantly true)}
   :profiles {:dev {:source-paths ["dev"]
                    :resource-paths ["dev-resources"]
-                   :dependencies [[org.clojure/clojure "1.10.0"]
-                                  [org.clojure/clojurescript "1.10.520"]
-                                  [clj-http "3.9.1"]
-                                  [org.clojure/data.csv "0.1.4"]
-                                  [cider/piggieback "0.4.0"]
+                   :dependencies [[org.clojure/clojure "1.11.1"]
+                                  [org.clojure/clojurescript "1.11.60"]
+                                  [clj-http "3.12.3"]
+                                  [org.clojure/data.csv "1.0.1"]
+                                  [cider/piggieback "0.5.3"]
                                   [net.totakke/libra "0.1.1"]
-                                  [criterium "0.4.4"]
-                                  [fipp "0.6.16"]]
+                                  [criterium "0.4.6"]
+                                  [fipp "0.6.26"]]
                    :global-vars {*warn-on-reflection* true
                                  *unchecked-math* :warn-on-boxed}
                    :plugins [[lein-cljsbuild "1.1.7"]
-                             [lein-doo "0.1.10"]
-                             [net.totakke/lein-libra "0.1.2"]]
+                             [lein-doo "0.1.11"]
+                             [net.totakke/lein-libra "0.1.2"]
+                             [lein-cljfmt "0.8.0"]]
                    :libra {:bench-paths ["bench"]}
                    :cljsbuild {:builds
                                {:test
@@ -35,5 +36,7 @@
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]
                                   [org.clojure/clojurescript "1.9.946"]
                                   [javax.xml.bind/jaxb-api "2.4.0-b180830.0359"]]}
-             :1.10 {:dependencies [[org.clojure/clojure "1.10.0"]
-                                   [org.clojure/clojurescript "1.10.520"]]}})
+             :1.10 {:dependencies [[org.clojure/clojure "1.10.3"]
+                                   [org.clojure/clojurescript "1.10.914"]]}
+             :1.11 {:dependencies [[org.clojure/clojure "1.11.1"]
+                                   [org.clojure/clojurescript "1.11.60"]]}})

@@ -115,7 +115,6 @@
       :default tumor ;;return tumor as-is by default
       )))
 
-
 (defn which-signatures
   "Finds a linear mixture of `signature-set` which best describes the given
   vector `sample-tumor`.
@@ -136,25 +135,24 @@
 
   Returns a map with the following keys:
   :seed-idx  - Index of the signature that was used as the initial seed.
-  :weights   - A map of weight indices to weight. :weights* with zero
-               contribution entries.
-  :weights*  - A map of non-zero weight indices to weight.
-               Note that entries that have zero contribution will be missing.
+  :weights   - A map of weight indices to weight.
+  :weights-with-names  - A map of weight that associated signature names as key on behalf of indices.
   :product   - matrix product of :weights and the provided signatures.
   :unknown   - 1 minus the sum of weights.
   :diff      - Element wise difference of the provided sample tumor and the
                product.
   :error-sum - Square root of the sum of the element wise square of :diff.
                Indicates how close the :product is from the original input."
-  ([sample-tumor signature-set]
-   (which-signatures sample-tumor signature-set {}))
-  ([sample-tumor signature-set
+  ([sample-tumor {:keys [signatures signature-names] :as signature-data}]
+   (which-signatures sample-tumor signature-data {}))
+  ([sample-tumor {:keys [signatures signature-names]}
     {:keys [signature-cutoff ^double error-threshold tri-count-method tri-counts]
      :or {signature-cutoff 0.06, error-threshold 1e-3}}]
-   (let [sample-tumor' (normalize-tri-counts sample-tumor
+   (let [signature-names' (vec signature-names)
+         sample-tumor' (normalize-tri-counts sample-tumor
                                              {:count-method tri-count-method
                                               :tri-counts tri-counts})
-         [used-indices used-sigs] (->> signature-set
+         [used-indices used-sigs] (->> signatures
                                        (prune-signatures sample-tumor')
                                        (apply map vector))
          t (double-array sample-tumor')
@@ -168,14 +166,15 @@
                  (recur new-w (double new-err))
                  (cut-off (l1-normalize new-w) signature-cutoff))))
          weights* (into {} (map vector used-indices w))
-         weights (->> (range (count signature-set))
-                      (map (fn [^long i] {(inc i) (get weights* i 0.0)}))
+         weights (->> (range (count signatures))
+                      (map (fn [^long i] {i (get weights* i 0.0)}))
                       (into {}))
+         weights-with-names (into {} (map (fn [[i v]] {(nth signature-names' i) v}) weights))
          product (apply mapv + (mapv #(mapv (partial * %1) %2) w used-sigs))
          unknown (areduce ^doubles w i u 1.0 (- u (aget ^doubles w i)))
          diff (mapv - sample-tumor' product)
          error-sum (Math/sqrt (reduce + 0.0 (mapv square diff)))]
-     {:seed-idx seed-idx, :weights weights, :weights* weights*,
+     {:seed-idx seed-idx, :weights weights, :weights-with-names weights-with-names,
       :product product, :unknown unknown, :diff diff, :error-sum error-sum})))
 
 (defn signature->vector
