@@ -114,6 +114,7 @@
       (and (nil? count-method) tri-counts) (normalize-fn tri-counts)
       :default tumor ;;return tumor as-is by default
       )))
+
 (defn which-signatures
   "Finds a linear mixture of `signature-set` which best describes the given
   vector `sample-tumor`.
@@ -134,10 +135,8 @@
 
   Returns a map with the following keys:
   :seed-idx  - Index of the signature that was used as the initial seed.
-  :weights   - A map of weight indices to weight. :weights* with zero
-               contribution entries.
-  :weights*  - A map of non-zero weight indices to weight.
-               Note that entries that have zero contribution will be missing.
+  :weights   - A map of weight indices to weight.
+  :weights-with-names  - A map of weight that associated signature names as key on behalf of indices.
   :product   - matrix product of :weights and the provided signatures.
   :unknown   - 1 minus the sum of weights.
   :diff      - Element wise difference of the provided sample tumor and the
