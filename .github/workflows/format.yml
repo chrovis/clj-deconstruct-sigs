@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   format:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: Setup Java
@@ -13,6 +13,10 @@ jobs:
         java-version: '11'
         distribution: 'adopt'
         architecture: x64
+    - name: Setup Clojure
+      uses: DeLaGuardo/setup-clojure@13.1
+      with:
+        lein: latest
     - name: Cache m2 repository
       uses: actions/cache@v3
       with:
