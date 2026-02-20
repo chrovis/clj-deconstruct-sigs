@@ -31,5 +31,5 @@
        :signatures (->> trans-pattern-names
                         (map emap)          ; sort values by trans-pattern-names
                         (apply map vector)  ; transpose
-                        (mapv #(mapv Double/parseDouble %))
+                        (mapv (fn [v] (mapv #(Double/parseDouble %) v)))
                         doall)})))
